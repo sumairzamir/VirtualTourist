@@ -12,284 +12,124 @@ import CoreData
 
 class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
     
-    
-    var dataController: DataController!
-
-    var fetchedResultsController: NSFetchedResultsController<Pin>!
-
-    func setupFetchedResultsController() {
-
-        let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-        let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: true)
-        fetchRequest.sortDescriptors = [sortDescriptor]
-
-        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
-
-        fetchedResultsController.delegate = self
-
-        do {
-            try fetchedResultsController.performFetch()
-            print("fetch works")
-            print(fetchedResultsController.fetchedObjects?.count)
-        } catch {
-
-            fatalError(error.localizedDescription)
-
-        }
-
-
-    }
-    
-    
-    @IBAction func testButton(_ sender: Any) {
-        
-        NetworkGetRequests.requestNumberOfPages(lat: 51, long: 0, completionHandler: handleTestButtonResponse(success:response:error:))
-        
-    }
-    
-    func handleTestButtonResponse(success: Bool, response: Int?, error: Error?) {
-        
-        if success {
-            NetworkParameters.Endpoints.ceilingPageNumber = UInt32(response!)
-            print(response)
-            print(NetworkParameters.Endpoints.randomPage)
-        } else {
-            print(error)
-        }
-    }
-    
     @IBOutlet weak var travelLocationsMapView: MKMapView!
+    // Definition of the DataController and the FRC in the ViewController.
+    var dataController: DataController!
+    var fetchedResultsController: NSFetchedResultsController<Pin>!
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        
-        setupFetchedResultsController()
-        
-        // FETCHED objects into annotations...sorted
-        
-        // Think about how to delete pins...add pins in the core data stack..? with the delegate extension
-        
-        travelLocationsMapView.addAnnotations(fetchedResultsController.fetchedObjects!)
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
-        
-        // ZOOM & Center
-        
-        let location = CLLocationCoordinate2D(latitude: UserDefaults.standard.double(forKey: "Latitude"), longitude: UserDefaults.standard.double(forKey: "Longitude"))
-        
-        let latitudeZoom = UserDefaults.standard.double(forKey: "LatitudeZoom")
-        let longitudeZoom = UserDefaults.standard.double(forKey: "LongitudeZoom")
-        
-        let span = MKCoordinateSpan(latitudeDelta: latitudeZoom, longitudeDelta: longitudeZoom)
-        
-        let zoom = MKCoordinateRegion(center: location, span: span)
-        travelLocationsMapView.setRegion(zoom, animated: true)
-        
-
-        let longTapRecogniser = UILongPressGestureRecognizer(target: self, action: #selector(handleLongTap))
-        
-        longTapRecogniser.minimumPressDuration = 1
-        
-        travelLocationsMapView.addGestureRecognizer(longTapRecogniser)
-        
-        let annotation = MKPointAnnotation()
-        
-        travelLocationsMapView.addAnnotation(annotation)
-        
-        // Deselects all pins!
-        
+        // On return to the view, deselect all the PointAnnotations.
         travelLocationsMapView.selectedAnnotations.forEach({travelLocationsMapView.deselectAnnotation($0, animated: false)})
-        
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        
         setupFetchedResultsController()
+        travelLocationsMapView.delegate = self
+        // Add all the annotations from the FRC.
+        travelLocationsMapView.addAnnotations(fetchedResultsController.fetchedObjects!)
+        // Center the MapView based on where the user left the MapView on previous app close using UserDefaults.
+        let location = CLLocationCoordinate2D(latitude: UserDefaults.standard.double(forKey: "Latitude"), longitude: UserDefaults.standard.double(forKey: "Longitude"))
+        let latitudeZoom = UserDefaults.standard.double(forKey: "LatitudeZoom")
+        let longitudeZoom = UserDefaults.standard.double(forKey: "LongitudeZoom")
+        let span = MKCoordinateSpan(latitudeDelta: latitudeZoom, longitudeDelta: longitudeZoom)
+        let zoom = MKCoordinateRegion(center: location, span: span)
+        travelLocationsMapView.setRegion(zoom, animated: true)
+        // Define the LongPress recogniser and instantiate a new PointAnnotation on the MapView.
+        let longTapRecogniser = UILongPressGestureRecognizer(target: self, action: #selector(handleLongTap))
+        longTapRecogniser.minimumPressDuration = 1
+        travelLocationsMapView.addGestureRecognizer(longTapRecogniser)
         
-        self.travelLocationsMapView.delegate = self
-        
-        
-        // Do any additional setup after loading the view.
-        
+        let annotation = MKPointAnnotation()
+        travelLocationsMapView.addAnnotation(annotation)
     }
-    
-    override func viewDidDisappear(_ animated: Bool) {
-        super.viewDidDisappear(animated)
-        
-        fetchedResultsController = nil
-        
-    }
-    
+    // As the user adjusts the MapView the parameters are saved to the UserDefaults.
     func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
         UserDefaults.standard.set(travelLocationsMapView.centerCoordinate.latitude, forKey: "Latitude")
         UserDefaults.standard.set(travelLocationsMapView.centerCoordinate.longitude, forKey: "Longitude")
         UserDefaults.standard.set(travelLocationsMapView.region.span.latitudeDelta, forKey: "LatitudeZoom")
         UserDefaults.standard.set(travelLocationsMapView.region.span.longitudeDelta, forKey: "LongitudeZoom")
-     
     }
-    
-    
-    
-    
+    // Method to handle the LongPress.
     @objc func handleLongTap(_ sender: UILongPressGestureRecognizer) {
-        
+        // If the sender, i.e. LongPress has not began (BOOL) the method is not called and returns.
         if sender.state != UIGestureRecognizer.State.began {
             return
         }
-        
+        // Determine the location pressed on the MapView.
         let location = sender.location(in: travelLocationsMapView)
-        
+        // Convert the location to coordinates.
         let coordinates = travelLocationsMapView.convert(location, toCoordinateFrom: travelLocationsMapView)
-        
+        // Instantiate a PointAnnotation and set its coordinates as above.
         let tapPin = MKPointAnnotation()
-        
         tapPin.coordinate = coordinates
-        
-        tapPin.title = "testing"
-        
-        tapPin.subtitle = "testing"
-        
-        
+        travelLocationsMapView.addAnnotation(tapPin)
+        // Save the pin into the Pin entity.
         let savePin = Pin(context: dataController.viewContext)
-        
         savePin.latitude = coordinates.latitude
         savePin.longitude = coordinates.longitude
-        
         try? dataController.viewContext.save()
-        
-        
-        travelLocationsMapView.addAnnotation(tapPin)
-        
-        
-//        let markerView = sender.view as! MKMarkerAnnotationView
-//
-//         performSegue(withIdentifier: "PhotoAlbumViewSegue", sender: markerView)
-        
-        
+        // Perform a fetch so that the controller is updated.
+        try? fetchedResultsController.performFetch()
     }
-    
+    // Method similar to those in TableViews & CollectionViews.
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-        
         let reuseId = "reuseId"
-        
         var markerView = travelLocationsMapView.dequeueReusableAnnotationView(withIdentifier: reuseId) as? MKMarkerAnnotationView
-        
         markerView = MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: reuseId)
-        
         markerView?.animatesWhenAdded = true
-        
         markerView?.glyphTintColor = .black
-        
+        // Define a tap gesture, so that a sender is defined when the pin is called/tapped.
+        // This is required so that the details of the specific pin can called in the PhotoAlbumViewController.
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(pinTapped(_:)))
-        
         markerView!.addGestureRecognizer(tapGesture)
         
         return markerView
-        
     }
-    
-//    func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-////
-////        let marker = view.annotation
-////
-////        travelLocationsMapView.selectAnnotation(<#T##annotation: MKAnnotation##MKAnnotation#>, animated: <#T##Bool#>)
-////
-////        travelLocationsMapView.deselectAnnotation(marker, animated: false)
-//
-////        view.annotation.self = fetchedResultsController.obj
-//
-////
-//
-//
-//
-//         performSegue(withIdentifier: "PhotoAlbumViewSegue", sender: self)
-//
-//    }
-    
+    // On tapping the pin perform the segue to the PhotoAlbumViewController.
     @objc func pinTapped(_ gesture: UITapGestureRecognizer) {
-        
         let pinView = gesture.view as! MKMarkerAnnotationView
-        
         performSegue(withIdentifier: "PhotoAlbumViewSegue", sender: pinView)
-        
     }
-    
-
+    // As the segue is called, parameters are passed through to the PhotoAlbumViewController.
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-
+        // Pass through to the PhotoAlbumViewController after passing through the NavigationController.
         if let navController = segue.destination as? UINavigationController {
-
             let nextVC = navController.topViewController as! PhotoAlbumViewController
-            
+            // Get the coordinates from the sender, i.e. the MarkerAnnotation pressed by the user.
             let coordinate = (sender as? MKMarkerAnnotationView)?.annotation!.coordinate
-
+            // Define an array of pins based on the objects within the FRC.
             let pinArray = fetchedResultsController.fetchedObjects!
-            
-            // Check for annotation within the array of all annotations
-            
+            // Check for annotation within the array of all annotations, based on a Bool condition where the coordinates match.
             guard let index = pinArray.firstIndex(where: { (pin) -> Bool in
-                
                 pin.latitude == coordinate?.latitude && pin.longitude == coordinate?.longitude })
                 else { return }
-            
+            // Within the PinArray select the Pin entity where the condition above for index is met.
             let selectedPin = pinArray[index]
-            
+            // Set pin variable in PhotoAlbumViewController as the selected pin and pass the DataController through.
             nextVC.pin = selectedPin
-
-            print(nextVC.pin)
-
             nextVC.dataController = dataController
-            
         } else {
-
-        fatalError("did not pass through")
-            
+        fatalError("Unable to save parameters.")
         }
-
     }
-    
+
+       func setupFetchedResultsController() {
+           let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
+           let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: true)
+           fetchRequest.sortDescriptors = [sortDescriptor]
+        
+           fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+           fetchedResultsController.delegate = self
+           
+           do {
+               try fetchedResultsController.performFetch()
+           } catch {
+               fatalError(error.localizedDescription)
+           }
+       }
     
 }
-//
-//extension TravelLocationsMapViewController {
-//
-//    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-//        guard let point = anObject as? Pin else {
-//            preconditionFailure("All changes observed in the map view controller should be for Point instances")
-//        }
-//
-//        switch type {
-//        case .insert:
-//            travelLocationsMapView.addAnnotation(point)
-//
-//        case .delete:
-//            travelLocationsMapView.removeAnnotation(point)
-//
-//        case .update:
-//            travelLocationsMapView.removeAnnotation(point)
-//            travelLocationsMapView.addAnnotation(point)
-//
-//        case .move:
-//            // N.B. The fetched results controller was set up with a single sort descriptor that produced a consistent ordering for its fetched Point instances.
-//            fatalError("How did we move a Point? We have a stable sort.")
-//        @unknown default:
-//            fatalError()
-//        }
-//    }
-//
-    
-    
-
 
 

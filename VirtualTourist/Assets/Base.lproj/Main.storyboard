@@ -2,7 +2,7 @@
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16086"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="collection view cell content view" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -19,14 +19,6 @@
                             <mapView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" mapType="standard" translatesAutoresizingMaskIntoConstraints="NO" id="Cig-1m-vTI">
                                 <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                             </mapView>
-                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="3Ph-Br-SLV">
-                                <rect key="frame" x="189" y="227" width="37" height="30"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
-                                <state key="normal" title="TEST"/>
-                                <connections>
-                                    <action selector="testButton:" destination="BYZ-38-t0r" eventType="touchUpInside" id="pbA-Rq-3FF"/>
-                                </connections>
-                            </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
@@ -81,7 +73,7 @@
                             <collectionView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="qfd-IP-7nb">
                                 <rect key="frame" x="0.0" y="338" width="414" height="494"/>
                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                                <collectionViewFlowLayout key="collectionViewLayout" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="fkc-o6-SNe">
+                                <collectionViewFlowLayout key="collectionViewLayout" minimumLineSpacing="10" minimumInteritemSpacing="10" id="fkc-o6-SNe">
                                     <size key="itemSize" width="128" height="128"/>
                                     <size key="headerReferenceSize" width="0.0" height="0.0"/>
                                     <size key="footerReferenceSize" width="0.0" height="0.0"/>
@@ -95,15 +87,15 @@
                                             <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="rEL-eE-ury" userLabel="Photo Image View">
-                                                    <rect key="frame" x="0.0" y="0.0" width="128" height="128"/>
+                                                <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="rEL-eE-ury" userLabel="Photo Image View">
+                                                    <rect key="frame" x="5" y="5" width="118" height="118"/>
                                                 </imageView>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstItem="rEL-eE-ury" firstAttribute="top" secondItem="iKv-yC-9Cq" secondAttribute="top" id="25w-Xx-tRN"/>
+                                                <constraint firstItem="rEL-eE-ury" firstAttribute="top" secondItem="iKv-yC-9Cq" secondAttribute="top" constant="5" id="25w-Xx-tRN"/>
                                                 <constraint firstItem="rEL-eE-ury" firstAttribute="centerY" secondItem="iKv-yC-9Cq" secondAttribute="centerY" id="VpF-zu-dD5"/>
                                                 <constraint firstItem="rEL-eE-ury" firstAttribute="centerX" secondItem="iKv-yC-9Cq" secondAttribute="centerX" id="Wj1-qr-bcP"/>
-                                                <constraint firstItem="rEL-eE-ury" firstAttribute="leading" secondItem="iKv-yC-9Cq" secondAttribute="leading" id="YyU-kD-Zrs"/>
+                                                <constraint firstItem="rEL-eE-ury" firstAttribute="leading" secondItem="iKv-yC-9Cq" secondAttribute="leading" constant="5" id="YyU-kD-Zrs"/>
                                             </constraints>
                                         </collectionViewCellContentView>
                                         <connections>
@@ -118,6 +110,9 @@
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yDP-ZF-8Tc">
                                 <rect key="frame" x="0.0" y="832" width="414" height="30"/>
                                 <state key="normal" title="Select New Photo Collection"/>
+                                <connections>
+                                    <action selector="fetchNewPhotoCollection:" destination="Rh1-Lf-vuV" eventType="touchUpInside" id="4kd-0y-cOo"/>
+                                </connections>
                             </button>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
@@ -145,7 +140,8 @@
                     </navigationItem>
                     <connections>
                         <outlet property="collectionMapView" destination="dPT-UV-v17" id="Kuq-AM-D8R"/>
-                        <outlet property="collectionView" destination="qfd-IP-7nb" id="kn4-Wm-Hsd"/>
+                        <outlet property="photoCollectionView" destination="qfd-IP-7nb" id="S2B-lB-R3o"/>
+                        <outlet property="photoCollectionViewFlowLayout" destination="fkc-o6-SNe" id="10n-wk-3hd"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="wE1-eG-15a" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

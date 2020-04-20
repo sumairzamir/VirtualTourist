@@ -11,10 +11,13 @@ import CoreData
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
-    
-    
-    func determineFirstLaunch() {
-        
+    /*
+     UserDefaults are used to store limited data.
+     Location and Zoom (Span) is used to persist information about the MapView.
+     A check is also made for whether the app has been opened for the first time.
+     If the app is opened for the first time, the location is centred on London, UK.
+     */
+    func determineFirstLaunchAndSetMapSettings() {
         if !UserDefaults.standard.bool(forKey: "SubsequentLaunch") {
             UserDefaults.standard.set(true, forKey: "SubsequentLaunch")
             UserDefaults.standard.set(51.5001524, forKey: "Latitude")
@@ -22,16 +25,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             UserDefaults.standard.set(12.616671599764935, forKey: "LatitudeZoom")
             UserDefaults.standard.set(9.826904050934047, forKey: "LongitudeZoom")
         }
-        
     }
-    
-    
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
         
-        determineFirstLaunch()
-        
+        determineFirstLaunchAndSetMapSettings()
         
         return true
     }

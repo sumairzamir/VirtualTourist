@@ -9,34 +9,21 @@
 import Foundation
 import UIKit
 
+// As per Flickr API documentation,
 struct PhotosSearchResponse: Codable {
-
     let photos: PhotosResponse
-
 }
-    struct PhotosResponse: Codable {
 
-        let pages: Int //Separate out later...so don't do request twice
-        let photo: [PhotoLevelResponse]
-
-    }
+struct PhotosResponse: Codable {
+    let pages: Int
+    let photo: [PhotoLevelResponse]
+}
 
 struct PhotoLevelResponse: Codable, Equatable {
-
     let id: String
     let secret: String
     let server: String
     let farm: Int
-
+    // URL variable added and called on the GET request for URL components.
+    var url: URL?
 }
-
-struct PhotosArray: Equatable {
-    
-    var individualPhotos: UIImage?
-    let id: String
-    let secret: String
-    let server: String
-    let farm: Int
-
-}
-

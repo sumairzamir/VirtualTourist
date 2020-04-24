@@ -10,7 +10,7 @@ import UIKit
 import MapKit
 import CoreData
 
-class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, NSFetchedResultsControllerDelegate {
+class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate {
     
     @IBOutlet weak var travelLocationsMapView: MKMapView!
     // Definition of the DataController and the FRC in the ViewController.
@@ -70,8 +70,8 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, NSF
         savePin.latitude = coordinates.latitude
         savePin.longitude = coordinates.longitude
         try? dataController.viewContext.save()
-        // Perform a fetch so that the controller is updated.
-        try? fetchedResultsController.performFetch()
+        // Perform a fetch so that the controller is updated. This is equivalent to the FetchedResultsControllerDelegate.
+        // try? fetchedResultsController.performFetch()
     }
     // Method similar to those in TableViews & CollectionViews.
     func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
@@ -111,24 +111,41 @@ class TravelLocationsMapViewController: UIViewController, MKMapViewDelegate, NSF
             nextVC.pin = selectedPin
             nextVC.dataController = dataController
         } else {
-        fatalError("Unable to save parameters.")
+            fatalError("Unable to save parameters.")
         }
     }
-
-       func setupFetchedResultsController() {
-           let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
-           let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: true)
-           fetchRequest.sortDescriptors = [sortDescriptor]
+    
+    func setupFetchedResultsController() {
+        let fetchRequest: NSFetchRequest<Pin> = Pin.fetchRequest()
+        let sortDescriptor = NSSortDescriptor(key: "latitude", ascending: true)
+        fetchRequest.sortDescriptors = [sortDescriptor]
         
-           fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
-           fetchedResultsController.delegate = self
-           
-           do {
-               try fetchedResultsController.performFetch()
-           } catch {
-               fatalError(error.localizedDescription)
-           }
-       }
+        fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
+        fetchedResultsController.delegate = self
+        
+        do {
+            try fetchedResultsController.performFetch()
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+    }
+    
+}
+
+extension TravelLocationsMapViewController: NSFetchedResultsControllerDelegate {
+    // Given the basic function of the MapView this could be replaced by a perform fetch call once the annotation is added. Used for practice purposes.
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        //Defining pin as a Pin entity.
+        guard let pin = anObject as? Pin else {
+            return
+        }
+        switch type {
+        case .insert: travelLocationsMapView.addAnnotation(pin)
+            break
+        default:
+            break
+        }
+    }
     
 }
 

@@ -11,15 +11,17 @@ import UIKit
 import CoreData
 import MapKit
 
-class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDelegate, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
+class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
     @IBOutlet weak var collectionMapView: MKMapView!
     @IBOutlet weak var photoCollectionView: UICollectionView!
     @IBOutlet weak var photoCollectionViewFlowLayout: UICollectionViewFlowLayout!
+    @IBOutlet weak var newPhotoCollectionButton: UIButton!
     
     var pin: Pin!
     var dataController: DataController!
     var fetchedResultsController: NSFetchedResultsController<Photos>!
+    let numberOfCollectionViewItems = 12
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -54,7 +56,7 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     }
     // The CollectionView always shows 12 items, with the placeholder image shown on item deletion.
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 12
+        return numberOfCollectionViewItems
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -77,37 +79,45 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         }
         return cell
     }
-    // TO FIX!!!
+    
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
-        let photoToDelete = fetchedResultsController.object(at: indexPath)
-        dataController.viewContext.delete(photoToDelete)
-        try? dataController.viewContext.save()
-        try? fetchedResultsController.performFetch()
-        self.photoCollectionView.deleteItems(at: [indexPath])
+        // Determine whether a valid indexPath exists first. Otherwise placeholder image remains.
+        if self.validateIndexPath(indexPath) {
+            let photoToDelete = fetchedResultsController.object(at: indexPath)
+            dataController.viewContext.delete(photoToDelete)
+            try? dataController.viewContext.save()
+            let cell = photoCollectionView.cellForItem(at: indexPath) as! PhotoAlbumCollectionViewCell
+            cell.photoImageView.image = UIImage(named: "placeholderImage")
+            // The following fetch and update to the CollectionView is monitored by the ResultsFetchController Delegate.
+            // try? fetchedResultsController.performFetch()
+            // self.photoCollectionView.deleteItems(at: [indexPath])
+        }
     }
     
     @IBAction func fetchNewPhotoCollection(_ sender: Any) {
-        let photosFetched = fetchedResultsController.fetchedObjects
-        // Delete the photos already fetched from the FRC>
-        for photos in photosFetched! {
-            dataController.viewContext.delete(photos)
-        }
-        try? dataController.viewContext.save()
+        newPhotoCollectionButton.isEnabled = false
+        deletePhotos()
         // Run the network request again to obtain new photos.
         NetworkGetRequests.requestNumberOfPages(lat: pin.latitude, long: pin.longitude, completionHandler: handleNetworkRequest(success:response:error:))
     }
-    // TO DO
+    // Helper method to remove all photos from the store.
+    func deletePhotos() {
+        let photosFetched = fetchedResultsController.fetchedObjects
+        for photos in photosFetched! {
+            dataController.viewContext.delete(photos)
+            try? dataController.viewContext.save()
+        }
+    }
+    // This method compares the indexPath returned to the number of objects.
     func validateIndexPath(_ indexPath: IndexPath) -> Bool {
-        /*
-         self.fetchedResultsController?.sections
-         indexPath.section
-         sections.count
-         indexPath.row
-         sections[indexPath.section].numberOfObjects
-         */
-        if let sections = self.fetchedResultsController?.sections, indexPath.section < sections.count {
-            if indexPath.row < sections[indexPath.section].numberOfObjects {
+        if let sections = self.fetchedResultsController?.sections {
+            /*
+             If the indexPath row passed is less than the number of objects in the FRC then a true is returned.
+             Specifically for the dequed cells.
+             If the indexPath for the cell is higher than the number of objects, the cell is not updated.
+             This forces the rows to be udpated in sequence.
+             */
+            if indexPath.row < sections[0].numberOfObjects {
                 return true
             }
         }
@@ -119,7 +129,8 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
         // Predicate is needed to align the Photo entities to the Pin entities.
         let predicate = NSPredicate(format: "pin == %@", pin)
         fetchRequest.predicate = predicate
-        let sortDescriptor = NSSortDescriptor(key: "photo", ascending: false)
+        // BinaryData cannot be sorted, another attribute needs to be created as the FRC needs a sort descriptor.
+        let sortDescriptor = NSSortDescriptor(key: "creationDate", ascending: false)
         fetchRequest.sortDescriptors = [sortDescriptor]
         
         fetchedResultsController = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: dataController.viewContext, sectionNameKeyPath: nil, cacheName: nil)
@@ -152,24 +163,41 @@ class PhotoAlbumViewController: UIViewController, NSFetchedResultsControllerDele
     
     func handleURLRequest(success: Bool, response: [PhotoLevelResponse]?, error: Error?) {
         if success {
-            // Download the images as an asyn task.
+            // Download the images as an async task.
             DispatchQueue.global().async {
                 for URLs in response! {
                     let downloadedImageData = try? Data(contentsOf: URLs.url!)
                     let downloadedImage = UIImage(data:downloadedImageData!)
                     let photo = Photos(context: self.dataController.viewContext)
                     photo.photo = downloadedImage?.pngData()
+                    photo.creationDate = Date()
                     photo.pin = self.pin
                     try? self.dataController.viewContext.save()
-                    try? self.fetchedResultsController.performFetch()
-                    // Return to the main thread and update the CollectionView.
-                    DispatchQueue.main.async {
-                        self.photoCollectionView.reloadData()
-                    }
+                    // The following fetch and reload is handled by the fetched results controller
+                    // try? self.fetchedResultsController.performFetch()
+                    // DispatchQueue.main.async {
+                    //      photoCollectionView.reloadData()
+                    // }
+                }
+                DispatchQueue.main.async {
+                    self.newPhotoCollectionButton.isEnabled = true
                 }
             }
         } else {
             print("Unable to download images.")
         }
     }
+}
+// Use of the resultsfetchcontroller rather than performing fetches within the controller.
+extension PhotoAlbumViewController: NSFetchedResultsControllerDelegate {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        switch type {
+        case .insert:
+            photoCollectionView.reloadData()
+            break
+        default:
+            break
+        }
+    }
+    
 }

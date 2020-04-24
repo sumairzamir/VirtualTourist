@@ -140,6 +140,7 @@
                     </navigationItem>
                     <connections>
                         <outlet property="collectionMapView" destination="dPT-UV-v17" id="Kuq-AM-D8R"/>
+                        <outlet property="newPhotoCollectionButton" destination="yDP-ZF-8Tc" id="Pdo-W3-u3M"/>
                         <outlet property="photoCollectionView" destination="qfd-IP-7nb" id="S2B-lB-R3o"/>
                         <outlet property="photoCollectionViewFlowLayout" destination="fkc-o6-SNe" id="10n-wk-3hd"/>
                     </connections>

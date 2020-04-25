@@ -96,6 +96,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     @IBAction func fetchNewPhotoCollection(_ sender: Any) {
         newPhotoCollectionButton.isEnabled = false
+        photoCollectionView.isUserInteractionEnabled = false
         deletePhotos()
         // Run the network request again to obtain new photos.
         NetworkGetRequests.requestNumberOfPages(lat: pin.latitude, long: pin.longitude, completionHandler: handleNetworkRequest(success:response:error:))
@@ -181,6 +182,7 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
                 }
                 DispatchQueue.main.async {
                     self.newPhotoCollectionButton.isEnabled = true
+                    self.photoCollectionView.isUserInteractionEnabled = true
                 }
             }
         } else {

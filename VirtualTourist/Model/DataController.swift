@@ -16,29 +16,30 @@ class DataController {
     var viewContext: NSManagedObjectContext {
         return persistantContainer.viewContext
     }
-    
-    var backgroundContext: NSManagedObjectContext!
+    // Background context boilerplate code
+    // var backgroundContext: NSManagedObjectContext!
     
     init(modelName: String) {
         persistantContainer = NSPersistentContainer(name: modelName)
     }
     
-    func configureContext() {
-        backgroundContext = persistantContainer.newBackgroundContext()
-        
-        viewContext.automaticallyMergesChangesFromParent = true
-        backgroundContext.automaticallyMergesChangesFromParent = true
-        
-        backgroundContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-        viewContext.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
-    }
+    // Background context merge policy
+    // func configureContext() {
+    //      backgroundContext = persistantContainer.newBackgroundContext()
+    //
+    //      viewContext.automaticallyMergesChangesFromParent = true
+    //      backgroundContext.automaticallyMergesChangesFromParent = true
+    //
+    //      backgroundContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+    //      viewContext.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+    // }
     
     func load(completionHandler: (() -> Void)? = nil) {
         persistantContainer.loadPersistentStores { (storeDescription, error) in
             guard error == nil else {
                 fatalError(error!.localizedDescription)
             }
-            self.configureContext()
+            // self.configureContext()
             completionHandler?()
         }
     }

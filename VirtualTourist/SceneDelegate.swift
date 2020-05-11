@@ -26,8 +26,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         
         dataController.load()
         
-        if let travelLocationsMpaViewController = window?.rootViewController as? TravelLocationsMapViewController {
-            travelLocationsMpaViewController.dataController = dataController
+        if let travelLocationsMapViewController = window?.rootViewController as? TravelLocationsMapViewController {
+            travelLocationsMapViewController.dataController = dataController
         } else {
             fatalError("The DataController could not be injected into the initial ViewController.")
         }

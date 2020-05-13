@@ -6,10 +6,10 @@
 //  Copyright © 2020 Sumair Zamir. All rights reserved.
 //
 
-import Foundation
 import UIKit
 import CoreData
 import MapKit
+import Alamofire
 
 class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
     
@@ -164,27 +164,21 @@ class PhotoAlbumViewController: UIViewController, UICollectionViewDataSource, UI
     
     func handleURLRequest(success: Bool, response: [PhotoLevelResponse]?, error: Error?) {
         if success {
-            // Download the images as an async task.
-            DispatchQueue.global().async {
-                for URLs in response! {
-                    let downloadedImageData = try? Data(contentsOf: URLs.url!)
-                    let downloadedImage = UIImage(data:downloadedImageData!)
-                    let photo = Photos(context: self.dataController.viewContext)
-                    photo.photo = downloadedImage?.pngData()
-                    photo.creationDate = Date()
-                    photo.pin = self.pin
-                    try? self.dataController.viewContext.save()
-                    // The following fetch and reload is handled by the fetched results controller
-                    // try? self.fetchedResultsController.performFetch()
-                    // DispatchQueue.main.async {
-                    //      photoCollectionView.reloadData()
-                    // }
-                }
-                DispatchQueue.main.async {
-                    self.newPhotoCollectionButton.isEnabled = true
-                    self.photoCollectionView.isUserInteractionEnabled = true
+            
+            for URLs in response! {
+                AF.download(URLs.url!).responseData { (response) in
+                    if let data = response.value {
+                        let downloadedImage = UIImage(data: data)
+                        let photo = Photos(context: self.dataController.viewContext)
+                        photo.photo = downloadedImage?.pngData()
+                        photo.creationDate = Date()
+                        photo.pin = self.pin
+                        try? self.dataController.viewContext.save()
+                    }
                 }
             }
+            self.newPhotoCollectionButton.isEnabled = true
+            self.photoCollectionView.isUserInteractionEnabled = true
         } else {
             print("Unable to download images.")
         }
